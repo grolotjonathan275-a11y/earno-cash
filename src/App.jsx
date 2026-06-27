@@ -4,6 +4,7 @@ import Admin from "./Admin";
 import VideoUpload from "./VideoUpload";
 import Profile from "./Profile";
 import GiftSystem from "./GiftSystem";
+import PaymentSystem from "./PaymentSystem";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -149,13 +150,7 @@ function VideoCard({ video, onWatch, user }) {
 
   return (
     <div style={{ background: "#1a1a1a", borderRadius: "16px", marginBottom: "16px", border: "1px solid #222", overflow: "hidden" }}>
-      {showGift && (
-        <GiftSystem
-          user={user}
-          targetUser={{ id: video.user_id, name: video.creator_name }}
-          onClose={() => setShowGift(false)}
-        />
-      )}
+      {showGift && <GiftSystem user={user} targetUser={{ id: video.user_id, name: video.creator_name }} onClose={() => setShowGift(false)} />}
       <div style={{ position: "relative", background: "#000", cursor: "pointer" }} onClick={handlePlay}>
         <video ref={videoRef} src={video.video_url} style={{ width: "100%", maxHeight: "260px", objectFit: "cover", display: "block" }} onEnded={() => setPlaying(false)} />
         {!playing && (
@@ -193,6 +188,7 @@ function DashboardPage({ user, setPage }) {
   const [videos, setVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [showGiftBox, setShowGiftBox] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
 
   const jobs = [
     { company: "TechCorp", title: "Remote Customer Service", pay: "$800/mo", location: "Worldwide" },
@@ -211,25 +207,30 @@ function DashboardPage({ user, setPage }) {
 
   return (
     <div style={{ maxWidth: "480px", margin: "0 auto", paddingBottom: "80px" }}>
-      {showGiftBox && (
-        <GiftSystem
+      {showGiftBox && <GiftSystem user={user} targetUser={null} onClose={() => setShowGiftBox(false)} />}
+      {showPayment && (
+        <PaymentSystem
           user={user}
-          targetUser={null}
-          onClose={() => setShowGiftBox(false)}
+          onClose={() => setShowPayment(false)}
+          onSuccess={(pts) => { setPoints(p => p + pts); setShowPayment(false); }}
         />
       )}
 
       <div style={{ background: "#111", padding: "20px", borderBottom: "1px solid #222" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ margin: 0, color: "#FFD700", fontSize: "24px" }}>EARNO</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button onClick={() => setShowGiftBox(true)}
-              style={{ background: "#1a1a1a", border: "1px solid #333", color: "#FFD700", padding: "6px 12px", borderRadius: "8px", cursor: "pointer", fontSize: "13px" }}>
-              🎁 Kado
+              style={{ background: "#1a1a1a", border: "1px solid #333", color: "#FFD700", padding: "6px 10px", borderRadius: "8px", cursor: "pointer", fontSize: "12px" }}>
+              🎁
+            </button>
+            <button onClick={() => setShowPayment(true)}
+              style={{ background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", color: "#000", padding: "6px 10px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}>
+              💳 Achte
             </button>
             <div style={{ textAlign: "right" }}>
-              <div style={{ color: "#FFD700", fontWeight: "700", fontSize: "18px" }}>⭐ {points} pts</div>
-              <div style={{ color: "#888", fontSize: "12px" }}>${(points / 100).toFixed(2)} USD</div>
+              <div style={{ color: "#FFD700", fontWeight: "700", fontSize: "16px" }}>⭐ {points}</div>
+              <div style={{ color: "#888", fontSize: "11px" }}>${(points / 100).toFixed(2)}</div>
             </div>
           </div>
         </div>
@@ -285,9 +286,13 @@ function DashboardPage({ user, setPage }) {
             <div style={{ fontSize: "48px", fontWeight: "900", color: "#FFD700" }}>${(points / 100).toFixed(2)}</div>
             <div style={{ color: "#888", fontSize: "14px" }}>{points} points</div>
           </div>
+          <button onClick={() => setShowPayment(true)}
+            style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer", color: "#000", fontSize: "16px", marginBottom: "16px" }}>
+            💳 Achte Pwen
+          </button>
           <div style={{ background: "#1a1a1a", borderRadius: "16px", padding: "20px", border: "1px solid #222" }}>
-            <h3 style={{ color: "#FFD700", margin: "0 0 16px" }}>💳 Withdraw to Card</h3>
-            <p style={{ color: "#888", fontSize: "13px", margin: "0 0 16px" }}>Minimum withdrawal: $10.00 (1000 points)<br />Fee: 45% platform fee applies</p>
+            <h3 style={{ color: "#FFD700", margin: "0 0 16px" }}>💸 Withdraw to Card</h3>
+            <p style={{ color: "#888", fontSize: "13px", margin: "0 0 16px" }}>Minimum: $10.00 (1000 points)<br />Fee: 45% platform fee applies</p>
             <button style={{ width: "100%", padding: "14px", background: points >= 1000 ? "linear-gradient(135deg, #FFD700, #FFA500)" : "#333", border: "none", borderRadius: "10px", fontWeight: "700", cursor: points >= 1000 ? "pointer" : "not-allowed", color: points >= 1000 ? "#000" : "#666", fontSize: "16px" }}>
               {points >= 1000 ? "Withdraw Now" : `Need ${1000 - points} more points`}
             </button>
