@@ -12,30 +12,53 @@ export default function EarnoLogo({ size = 120, animated = true, showText = true
     const ctx = canvas.getContext("2d");
     const w = canvas.width;
     const h = canvas.height;
+    const img = new Image();
+    img.src = "/earno-logo.jpeg";
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
       timeRef.current += 0.02;
       const t = timeRef.current;
 
-      const glowSize = 60 + Math.sin(t * 1.5) * 8;
+      // Glow background
+      const glowSize = w * 0.5 + Math.sin(t * 1.5) * 10;
       const glow = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, glowSize);
-      glow.addColorStop(0, `hsla(${(t * 30) % 360}, 100%, 70%, 0.15)`);
+      glow.addColorStop(0, `hsla(${(t * 40) % 360}, 100%, 60%, 0.25)`);
+      glow.addColorStop(0.5, `hsla(${(t * 40 + 120) % 360}, 100%, 60%, 0.1)`);
       glow.addColorStop(1, "transparent");
       ctx.fillStyle = glow;
       ctx.fillRect(0, 0, w, h);
 
+      // Draw logo with hue rotation
+      if (img.complete) {
+        ctx.save();
+        ctx.translate(w/2, h/2);
+        const scale = 1 + Math.sin(t * 1.2) * 0.04;
+        ctx.scale(scale, scale);
+        
+        // Clip to remove black background
+        ctx.globalCompositeOperation = "screen";
+        ctx.drawImage(img, -w*0.45, -h*0.45, w*0.9, h*0.9);
+        ctx.globalCompositeOperation = "source-over";
+        ctx.restore();
+      }
+
+      // Orbiting particles
       ctx.save();
       ctx.translate(w/2, h/2);
-      ctx.rotate(t * 0.4);
-      for (let i = 0; i < 3; i++) {
-        const angle = (i / 3) * Math.PI * 2;
-        const rx = Math.cos(angle) * 42;
-        const ry = Math.sin(angle) * 42;
-        const hue = (t * 40 + i * 120) % 360;
+      ctx.rotate(t * 0.5);
+      for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2;
+        const r = w * 0.4;
+        const px = Math.cos(angle) * r;
+        const py = Math.sin(angle) * r;
+        const hue = (t * 50 + i * 90) % 360;
+        const pSize = 3 + Math.sin(t * 3 + i) * 1.5;
         ctx.beginPath();
-        ctx.arc(rx, ry, 4 + Math.sin(t * 2 + i) * 2, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${hue}, 100%, 70%, 0.6)`;
+        ctx.arc(px, py, pSize, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${hue}, 100%, 70%, 0.8)`;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = `hsla(${hue}, 100%, 70%, 1)`;
         ctx.fill();
       }
       ctx.restore();
@@ -43,60 +66,28 @@ export default function EarnoLogo({ size = 120, animated = true, showText = true
       animRef.current = requestAnimationFrame(draw);
     };
 
-    draw();
+    img.onload = draw;
+    if (img.complete) draw();
+
     return () => cancelAnimationFrame(animRef.current);
-  }, [animated]);
+  }, [animated, size]);
 
   return (
     <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
       <div style={{ position: "relative", width: size, height: size }}>
-        {animated && (
+        {animated ? (
           <canvas
             ref={canvasRef}
             width={size}
             height={size}
-            style={{ position: "absolute", top: 0, left: 0, zIndex: 0, borderRadius: "50%" }}
+            style={{ borderRadius: "50%" }}
           />
-        )}
-
-        <div style={{
-          position: "relative",
-          zIndex: 1,
-          width: size,
-          height: size,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}>
+        ) : (
           <img
             src="/earno-logo.jpeg"
             alt="EARNO"
-            style={{
-              width: "90%",
-              height: "90%",
-              objectFit: "contain",
-              mixBlendMode: "screen",
-              animation: animated ? "earnoHolo 3s ease-in-out infinite" : "none",
-              filter: animated ? "drop-shadow(0 0 16px rgba(100,200,255,0.8)) drop-shadow(0 0 32px rgba(180,100,255,0.5))" : "none",
-            }}
+            style={{ width: size, height: size, objectFit: "contain", mixBlendMode: "screen" }}
           />
-        </div>
-
-        {animated && (
-          <div style={{
-            position: "absolute",
-            top: -4,
-            left: -4,
-            right: -4,
-            bottom: -4,
-            borderRadius: "50%",
-            border: "2px solid transparent",
-            backgroundImage: "linear-gradient(black, black), linear-gradient(135deg, #FFD700, #00FFFF, #FF00FF, #FFD700)",
-            backgroundOrigin: "border-box",
-            backgroundClip: "padding-box, border-box",
-            animation: "earnoRing 2s linear infinite",
-            zIndex: 2,
-          }} />
         )}
       </div>
 
@@ -134,16 +125,6 @@ export default function EarnoLogo({ size = 120, animated = true, showText = true
       )}
 
       <style>{`
-        @keyframes earnoHolo {
-          0%, 100% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(255,215,0,0.8)) hue-rotate(0deg); }
-          25% { transform: scale(1.05); filter: drop-shadow(0 0 24px rgba(0,255,255,0.9)) hue-rotate(90deg); }
-          50% { transform: scale(1.02); filter: drop-shadow(0 0 20px rgba(255,0,255,0.8)) hue-rotate(180deg); }
-          75% { transform: scale(1.05); filter: drop-shadow(0 0 24px rgba(100,200,255,0.9)) hue-rotate(270deg); }
-        }
-        @keyframes earnoRing {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
         @keyframes earnoTextShift {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
