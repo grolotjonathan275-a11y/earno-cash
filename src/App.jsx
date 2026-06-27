@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import Admin from "./Admin";
+import EarnoLogo from "./EarnoLogo";
 import VideoUpload from "./VideoUpload";
 import Profile from "./Profile";
 import GiftSystem from "./GiftSystem";
@@ -31,10 +32,7 @@ function HomePage({ setPage }) {
   return (
     <div style={{ textAlign: "center", padding: "60px 20px" }}>
       <div style={{ marginBottom: "30px" }}>
-        <h1 style={{ fontSize: "56px", fontWeight: "900", background: "linear-gradient(135deg, #FFD700, #FFA500)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>
-          EARNO
-        </h1>
-        <p style={{ fontSize: "20px", color: "#aaa", marginTop: "10px" }}>Watch. Share. Earn. Live Free.</p>
+       <EarnoLogo size={160} animated={true} showText={true} showSlogan={true} />
       </div>
       <div style={{ display: "flex", justifyContent: "center", gap: "20px", flexWrap: "wrap", marginBottom: "50px" }}>
         {[
