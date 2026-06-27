@@ -56,7 +56,15 @@ function HomePage({ setPage }) {
         <button onClick={() => setPage("dashboard")}
           style={{ background: "transparent", color: "#FFD700", border: "2px solid #FFD700", padding: "16px 40px", borderRadius: "50px", fontSize: "18px", fontWeight: "700", cursor: "pointer" }}>
           Sign In
-        </button>
+        <button onClick={async () => {
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: "https://earno-cash.vercel.app" }
+  });
+}}
+style={{ background: "white", color: "#000", border: "none", padding: "16px 40px", borderRadius: "50px", fontSize: "18px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
+  <img src="https://www.google.com/favicon.ico" width="20" alt="G" /> Google
+</button>
       </div>
     </div>
   );
@@ -314,6 +322,18 @@ function DashboardPage({ user, setPage }) {
           </button>
         ))}
       </div>
+          <div style={{ textAlign: "center", margin: "16px 0", color: "#888" }}>— oswa —</div>
+          <button onClick={async () => {
+            await supabase.auth.signInWithOAuth({
+              provider: "google",
+              options: { redirectTo: "https://earno-cash.vercel.app" }
+            });
+          }}
+          style={{ width: "100%", padding: "14px", background: "white", border: "none", borderRadius: "10px", fontWeight: "700", fontSize: "16px", cursor: "pointer", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+            <img src="https://www.google.com/favicon.ico" width="20" alt="G" /> Konekte ak Google
+          </button>
+        </div>
+      )}
     </div>
   );
 }
