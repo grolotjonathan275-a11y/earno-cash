@@ -10,6 +10,19 @@ export default function Admin() {
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState({ total: 0, totalPoints: 0 });
   const [activeTab, setActiveTab] = useState("users");
+  const [loading, setLoading] = useState(false);
+
+  // Notifikasyon state
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifBody, setNotifBody] = useState("");
+  const [notifType, setNotifType] = useState("promo");
+  const [notifImageUrl, setNotifImageUrl] = useState("");
+  const [sendTo, setSendTo] = useState("all");
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [sending, setSending] = useState(false);
+  const [notifSuccess, setNotifSuccess] = useState("");
+
+  // Règ state
   const [rules, setRules] = useState([
     { id: 1, name: "Points pou watch video", value: "10 pts / 60 sek" },
     { id: 2, name: "Points pou 100 abòne", value: "10 pts" },
@@ -20,7 +33,6 @@ export default function Admin() {
   const [newRule, setNewRule] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -40,19 +52,71 @@ export default function Admin() {
   }, [auth]);
 
   const handleLogin = () => {
-    if (password === ADMIN_PASSWORD) {
-      setAuth(true);
-      setError("");
-    } else {
-      setError("❌ Modpas enkòrèk!");
-    }
+    if (password === ADMIN_PASSWORD) { setAuth(true); setError(""); }
+    else setError("❌ Modpas enkòrèk!");
   };
 
   const handleDeleteUser = async (id) => {
-    if (confirm("Ou sèten ou vle efase itilizatè sa a?")) {
+    if (confirm("Efase itilizatè sa a?")) {
       await supabase.from("users").delete().eq("id", id);
       fetchUsers();
     }
+  };
+
+  const toggleSelectUser = (userId) => {
+    setSelectedUsers(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const selectAllUsers = () => {
+    if (selectedUsers.length === users.length) setSelectedUsers([]);
+    else setSelectedUsers(users.map(u => u.id));
+  };
+
+  const handleSendNotification = async () => {
+    if (!notifTitle || !notifBody) {
+      setNotifSuccess("⚠️ Mete tit ak kò mesaj la!");
+      return;
+    }
+    setSending(true);
+    setNotifSuccess("");
+
+    try {
+      let targetUsers = [];
+
+      if (sendTo === "all") {
+        targetUsers = users.map(u => u.id);
+      } else if (sendTo === "selected") {
+        if (selectedUsers.length === 0) {
+          setNotifSuccess("⚠️ Chwazi omwen yon itilizatè!");
+          setSending(false);
+          return;
+        }
+        targetUsers = selectedUsers;
+      }
+
+      const notifs = targetUsers.map(userId => ({
+        user_id: userId,
+        title: `EARNO — ${notifTitle}`,
+        body: notifBody,
+        type: notifType,
+        image_url: notifImageUrl || null,
+        read: false,
+      }));
+
+      const { error } = await supabase.from("notifications").insert(notifs);
+      if (error) throw error;
+
+      setNotifSuccess(`✅ Notifikasyon voye bay ${targetUsers.length} itilizatè avèk siksè!`);
+      setNotifTitle("");
+      setNotifBody("");
+      setNotifImageUrl("");
+      setSelectedUsers([]);
+    } catch (err) {
+      setNotifSuccess(`❌ Erè: ${err.message}`);
+    }
+    setSending(false);
   };
 
   const handleAiRule = async () => {
@@ -117,17 +181,18 @@ export default function Admin() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", borderBottom: "1px solid #222", padding: "0 24px" }}>
-        {["users", "rules", "ai"].map(tab => (
+      <div style={{ display: "flex", borderBottom: "1px solid #222", padding: "0 24px", overflowX: "auto" }}>
+        {["users", "notifications", "rules", "ai"].map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            style={{ padding: "12px 20px", background: "none", border: "none", color: activeTab === tab ? "#FFD700" : "#888", borderBottom: activeTab === tab ? "2px solid #FFD700" : "none", cursor: "pointer", fontWeight: "600", fontSize: "14px", textTransform: "capitalize" }}>
-            {tab === "users" ? "👥 Itilizatè" : tab === "rules" ? "⚙️ Règ" : "🤖 AI Règ"}
+            style={{ padding: "12px 20px", background: "none", border: "none", color: activeTab === tab ? "#FFD700" : "#888", borderBottom: activeTab === tab ? "2px solid #FFD700" : "none", cursor: "pointer", fontWeight: "600", fontSize: "14px", whiteSpace: "nowrap" }}>
+            {tab === "users" ? "👥 Itilizatè" : tab === "notifications" ? "🔔 Notifikasyon" : tab === "rules" ? "⚙️ Règ" : "🤖 AI Règ"}
           </button>
         ))}
       </div>
 
       <div style={{ padding: "24px" }}>
-        {/* Users Tab */}
+
+        {/* ===== USERS TAB ===== */}
         {activeTab === "users" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
@@ -174,7 +239,107 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Rules Tab */}
+        {/* ===== NOTIFICATIONS TAB ===== */}
+        {activeTab === "notifications" && (
+          <div style={{ maxWidth: "700px" }}>
+            <h3 style={{ color: "#FFD700", marginBottom: "20px" }}>🔔 Voye Notifikasyon</h3>
+
+            {notifSuccess && (
+              <div style={{ background: notifSuccess.startsWith("✅") ? "#00ff0022" : "#ff000022", border: `1px solid ${notifSuccess.startsWith("✅") ? "#00ff00" : "#ff4444"}`, borderRadius: "10px", padding: "14px", marginBottom: "16px", color: notifSuccess.startsWith("✅") ? "#00ff00" : "#ff4444" }}>
+                {notifSuccess}
+              </div>
+            )}
+
+            {/* Tip mesaj */}
+            <div style={{ background: "#1a1a1a", borderRadius: "12px", padding: "16px", marginBottom: "20px", border: "1px solid #333" }}>
+              <p style={{ color: "#aaa", margin: "0 0 8px", fontSize: "13px" }}>💡 Tit mesaj la pral parèt konsa nan telefòn itilizatè a:</p>
+              <div style={{ background: "#0a0a0a", borderRadius: "8px", padding: "12px", display: "flex", gap: "10px", alignItems: "center" }}>
+                <div style={{ background: "linear-gradient(135deg, #FFD700, #FFA500)", borderRadius: "8px", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "900", color: "#000", fontSize: "12px" }}>E</div>
+                <div>
+                  <div style={{ fontWeight: "700", fontSize: "13px" }}>EARNO — {notifTitle || "Tit ou a"}</div>
+                  <div style={{ color: "#888", fontSize: "12px" }}>{notifBody || "Kò mesaj ou a..."}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tip notifikasyon */}
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ color: "#aaa", fontSize: "13px", marginBottom: "8px", display: "block" }}>Tip Notifikasyon:</label>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {[
+                  { id: "promo", label: "📢 Pwomosyon" },
+                  { id: "system", label: "⚡ Sistèm" },
+                  { id: "gift", label: "🎁 Kado" },
+                  { id: "alert", label: "🚨 Alèt" },
+                ].map(t => (
+                  <button key={t.id} onClick={() => setNotifType(t.id)}
+                    style={{ padding: "8px 14px", background: notifType === t.id ? "linear-gradient(135deg, #FFD700, #FFA500)" : "#222", border: notifType === t.id ? "none" : "1px solid #333", borderRadius: "8px", color: notifType === t.id ? "#000" : "#888", cursor: "pointer", fontWeight: "600", fontSize: "13px" }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tit */}
+            <label style={{ color: "#aaa", fontSize: "13px", marginBottom: "6px", display: "block" }}>Tit Mesaj (san "EARNO —"):</label>
+            <input placeholder="Egzanp: Pwomosyon Espesyal 🔥" style={inputStyle} value={notifTitle} onChange={e => setNotifTitle(e.target.value)} />
+
+            {/* Kò mesaj */}
+            <label style={{ color: "#aaa", fontSize: "13px", marginBottom: "6px", display: "block" }}>Kò Mesaj:</label>
+            <textarea placeholder="Ekri mesaj ou a isit..." style={{ ...inputStyle, height: "100px", resize: "vertical" }}
+              value={notifBody} onChange={e => setNotifBody(e.target.value)} />
+
+            {/* Image URL */}
+            <label style={{ color: "#aaa", fontSize: "13px", marginBottom: "6px", display: "block" }}>URL Foto/Imaj (opsyonèl):</label>
+            <input placeholder="https://..." style={inputStyle} value={notifImageUrl} onChange={e => setNotifImageUrl(e.target.value)} />
+
+            {/* Destinatè */}
+            <label style={{ color: "#aaa", fontSize: "13px", marginBottom: "8px", display: "block" }}>Voye bay:</label>
+            <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+              <button onClick={() => setSendTo("all")}
+                style={{ flex: 1, padding: "12px", background: sendTo === "all" ? "linear-gradient(135deg, #FFD700, #FFA500)" : "#222", border: sendTo === "all" ? "none" : "1px solid #333", borderRadius: "10px", color: sendTo === "all" ? "#000" : "#888", cursor: "pointer", fontWeight: "700" }}>
+                🌍 Tout Moun ({users.length})
+              </button>
+              <button onClick={() => setSendTo("selected")}
+                style={{ flex: 1, padding: "12px", background: sendTo === "selected" ? "linear-gradient(135deg, #FFD700, #FFA500)" : "#222", border: sendTo === "selected" ? "none" : "1px solid #333", borderRadius: "10px", color: sendTo === "selected" ? "#000" : "#888", cursor: "pointer", fontWeight: "700" }}>
+                👤 Moun Chwazi ({selectedUsers.length})
+              </button>
+            </div>
+
+            {/* Chwazi itilizatè */}
+            {sendTo === "selected" && (
+              <div style={{ background: "#111", borderRadius: "12px", padding: "16px", marginBottom: "16px", border: "1px solid #222", maxHeight: "250px", overflowY: "auto" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <span style={{ color: "#aaa", fontSize: "13px" }}>Chwazi itilizatè yo:</span>
+                  <button onClick={selectAllUsers}
+                    style={{ background: "#222", border: "1px solid #333", color: "#FFD700", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "12px" }}>
+                    {selectedUsers.length === users.length ? "Dekwoche Tout" : "Kwoche Tout"}
+                  </button>
+                </div>
+                {users.map(u => (
+                  <div key={u.id} onClick={() => toggleSelectUser(u.id)}
+                    style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "8px", cursor: "pointer", background: selectedUsers.includes(u.id) ? "#2a2a1a" : "transparent", border: selectedUsers.includes(u.id) ? "1px solid #FFD700" : "1px solid transparent", marginBottom: "6px" }}>
+                    <div style={{ width: "20px", height: "20px", borderRadius: "4px", background: selectedUsers.includes(u.id) ? "#FFD700" : "#333", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}>
+                      {selectedUsers.includes(u.id) ? "✓" : ""}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: "600", fontSize: "14px" }}>{u.full_name}</div>
+                      <div style={{ color: "#888", fontSize: "12px" }}>{u.email} · {u.country}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Bouton voye */}
+            <button onClick={handleSendNotification} disabled={sending}
+              style={{ width: "100%", padding: "16px", background: sending ? "#333" : "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "12px", fontWeight: "700", fontSize: "16px", cursor: sending ? "not-allowed" : "pointer", color: sending ? "#666" : "#000" }}>
+              {sending ? "Ap voye..." : sendTo === "all" ? `🚀 Voye bay Tout ${users.length} Itilizatè` : `🚀 Voye bay ${selectedUsers.length} Itilizatè Chwazi`}
+            </button>
+          </div>
+        )}
+
+        {/* ===== RULES TAB ===== */}
         {activeTab === "rules" && (
           <div>
             <h3 style={{ color: "#FFD700", marginBottom: "16px" }}>⚙️ Règ Sistèm</h3>
@@ -191,7 +356,7 @@ export default function Admin() {
               </div>
             ))}
             <div style={{ marginTop: "20px" }}>
-              <input placeholder="Ajoute nouvo règ manyèlman..." style={inputStyle} value={newRule} onChange={e => setNewRule(e.target.value)} />
+              <input placeholder="Ajoute nouvo règ..." style={inputStyle} value={newRule} onChange={e => setNewRule(e.target.value)} />
               <button onClick={() => { if (newRule) { setRules(prev => [...prev, { id: Date.now(), name: newRule, value: "Aktif" }]); setNewRule(""); } }}
                 style={{ padding: "12px 24px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer", color: "#000" }}>
                 Ajoute Règ
@@ -200,12 +365,12 @@ export default function Admin() {
           </div>
         )}
 
-        {/* AI Tab */}
+        {/* ===== AI TAB ===== */}
         {activeTab === "ai" && (
           <div>
             <h3 style={{ color: "#FFD700", marginBottom: "8px" }}>🤖 Ajoute Règ ak AI</h3>
             <p style={{ color: "#888", marginBottom: "20px" }}>Ekri sa ou vle chanje — AI ap kreye règ la pou ou.</p>
-            <textarea placeholder="Ekzanp: Chak 50 like sou yon video, kreyatè a jwenn 5 pwen siplemantè..." 
+            <textarea placeholder="Ekzanp: Chak 50 like sou yon video, kreyatè a jwenn 5 pwen siplemantè..."
               style={{ ...inputStyle, height: "120px", resize: "vertical" }}
               value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} />
             <button onClick={handleAiRule} disabled={aiLoading}
