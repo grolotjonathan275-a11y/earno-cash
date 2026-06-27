@@ -5,6 +5,7 @@ import VideoUpload from "./VideoUpload";
 import Profile from "./Profile";
 import GiftSystem from "./GiftSystem";
 import PaymentSystem from "./PaymentSystem";
+import Notifications from "./Notifications";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -21,6 +22,7 @@ function App() {
       {page === "dashboard" && <DashboardPage user={user} setPage={setPage} />}
       {page === "upload" && <VideoUpload user={user} onUploadComplete={() => setPage("dashboard")} />}
       {page === "profile" && <Profile user={user} setPage={setPage} />}
+      {page === "alerts" && <Notifications user={user} setPage={setPage} />}
     </div>
   );
 }
