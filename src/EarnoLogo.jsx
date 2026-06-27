@@ -75,6 +75,7 @@ export default function EarnoLogo({ size = 120, animated = true, showText = true
               width: "90%",
               height: "90%",
               objectFit: "contain",
+              mixBlendMode: "screen",
               animation: animated ? "earnoHolo 3s ease-in-out infinite" : "none",
               filter: animated ? "drop-shadow(0 0 16px rgba(100,200,255,0.8)) drop-shadow(0 0 32px rgba(180,100,255,0.5))" : "none",
             }}
