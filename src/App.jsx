@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { supabase } from "./supabase";
+import Admin from "./Admin";
 
 function App() {
   const [page, setPage] = useState("home");
   const [user, setUser] = useState(null);
+
+  if (window.location.pathname === "/admin") {
+    return <Admin />;
+  }
 
   return (
     <div style={{ fontFamily: "Inter, sans-serif", background: "#0a0a0a", minHeight: "100vh", color: "white" }}>
@@ -121,7 +126,7 @@ function RegisterPage({ setPage, setUser }) {
           <input placeholder="Full Name (as on ID)" style={inputStyle} value={form.name} onChange={e => update("name", e.target.value)} />
           <input placeholder="Email Address" type="email" style={inputStyle} value={form.email} onChange={e => update("email", e.target.value)} />
           <input placeholder="Secret Code (Password)" type="password" style={inputStyle} value={form.password} onChange={e => update("password", e.target.value)} />
-          <button onClick={() => { if (form.name && form.email && form.password) setStep(2); else setError("Please fill all fields"); }}
+          <button onClick={() => { if (form.name && form.email && form.password) { setError(""); setStep(2); } else setError("Please fill all fields"); }}
             style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "10px", fontSize: "16px", fontWeight: "700", cursor: "pointer", color: "#000" }}>
             Continue →
           </button>
@@ -135,7 +140,7 @@ function RegisterPage({ setPage, setUser }) {
           <p style={{ color: "#888", fontSize: "13px", marginBottom: "16px" }}>📸 Face scan activated after registration for security</p>
           <div style={{ display: "flex", gap: "10px" }}>
             <button onClick={() => setStep(1)} style={{ flex: 1, padding: "14px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "10px", color: "white", cursor: "pointer" }}>← Back</button>
-            <button onClick={() => { if (form.country && form.address) setStep(3); else setError("Please fill all fields"); }}
+            <button onClick={() => { if (form.country && form.address) { setError(""); setStep(3); } else setError("Please fill all fields"); }}
               style={{ flex: 2, padding: "14px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "10px", fontSize: "16px", fontWeight: "700", cursor: "pointer", color: "#000" }}>Continue →</button>
           </div>
         </div>
