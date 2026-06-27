@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import Admin from "./Admin";
 import VideoUpload from "./VideoUpload";
@@ -28,11 +28,8 @@ function HomePage({ setPage }) {
         <h1 style={{ fontSize: "56px", fontWeight: "900", background: "linear-gradient(135deg, #FFD700, #FFA500)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>
           EARNO
         </h1>
-        <p style={{ fontSize: "20px", color: "#aaa", marginTop: "10px" }}>
-          Watch. Share. Earn. Live Free.
-        </p>
+        <p style={{ fontSize: "20px", color: "#aaa", marginTop: "10px" }}>Watch. Share. Earn. Live Free.</p>
       </div>
-
       <div style={{ display: "flex", justifyContent: "center", gap: "20px", flexWrap: "wrap", marginBottom: "50px" }}>
         {[
           { icon: "▶️", title: "Watch Videos", desc: "Earn 10 points per 60 seconds watched" },
@@ -47,7 +44,6 @@ function HomePage({ setPage }) {
           </div>
         ))}
       </div>
-
       <div style={{ display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
         <button onClick={() => setPage("register")}
           style={{ background: "linear-gradient(135deg, #FFD700, #FFA500)", color: "#000", border: "none", padding: "16px 40px", borderRadius: "50px", fontSize: "18px", fontWeight: "700", cursor: "pointer" }}>
@@ -66,46 +62,21 @@ function RegisterPage({ setPage, setUser }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    name: "", email: "", password: "", country: "", address: "",
-    cardNumber: "", cardExpiry: "", cardName: ""
-  });
-
+  const [form, setForm] = useState({ name: "", email: "", password: "", country: "", address: "", cardNumber: "", cardExpiry: "", cardName: "" });
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
-
-  const inputStyle = {
-    width: "100%", padding: "14px", borderRadius: "10px", border: "1px solid #333",
-    background: "#1a1a1a", color: "white", fontSize: "16px", marginBottom: "14px", boxSizing: "border-box"
-  };
+  const inputStyle = { width: "100%", padding: "14px", borderRadius: "10px", border: "1px solid #333", background: "#1a1a1a", color: "white", fontSize: "16px", marginBottom: "14px", boxSizing: "border-box" };
 
   const handleRegister = async () => {
     setLoading(true);
     setError("");
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-      });
+      const { data: authData, error: authError } = await supabase.auth.signUp({ email: form.email, password: form.password });
       if (authError) throw authError;
-
-      const { error: dbError } = await supabase.from("users").insert([{
-        id: authData.user.id,
-        full_name: form.name,
-        email: form.email,
-        country: form.country,
-        address: form.address,
-        card_number: form.cardNumber,
-        card_expiry: form.cardExpiry,
-        card_name: form.cardName,
-        points: 5,
-      }]);
+      const { error: dbError } = await supabase.from("users").insert([{ id: authData.user.id, full_name: form.name, email: form.email, country: form.country, address: form.address, card_number: form.cardNumber, card_expiry: form.cardExpiry, card_name: form.cardName, points: 5 }]);
       if (dbError) throw dbError;
-
-      setUser({ ...form, points: 5 });
+      setUser({ ...form, id: authData.user.id, points: 5 });
       setPage("dashboard");
-    } catch (err) {
-      setError(err.message);
-    }
+    } catch (err) { setError(err.message); }
     setLoading(false);
   };
 
@@ -113,15 +84,10 @@ function RegisterPage({ setPage, setUser }) {
     <div style={{ maxWidth: "480px", margin: "0 auto", padding: "40px 20px" }}>
       <h2 style={{ color: "#FFD700", textAlign: "center", marginBottom: "8px" }}>Create Your Account</h2>
       <p style={{ color: "#888", textAlign: "center", marginBottom: "30px" }}>Step {step} of 3</p>
-
       <div style={{ display: "flex", gap: "8px", marginBottom: "30px" }}>
-        {[1, 2, 3].map(s => (
-          <div key={s} style={{ flex: 1, height: "4px", borderRadius: "2px", background: s <= step ? "#FFD700" : "#333" }} />
-        ))}
+        {[1, 2, 3].map(s => <div key={s} style={{ flex: 1, height: "4px", borderRadius: "2px", background: s <= step ? "#FFD700" : "#333" }} />)}
       </div>
-
       {error && <div style={{ background: "#ff000022", border: "1px solid #ff4444", borderRadius: "10px", padding: "12px", marginBottom: "16px", color: "#ff4444" }}>{error}</div>}
-
       {step === 1 && (
         <div>
           <p style={{ color: "#aaa", marginBottom: "20px" }}>🎁 You already have <span style={{ color: "#FFD700", fontWeight: "700" }}>5 points</span> waiting!</p>
@@ -134,7 +100,6 @@ function RegisterPage({ setPage, setUser }) {
           </button>
         </div>
       )}
-
       {step === 2 && (
         <div>
           <input placeholder="Country" style={inputStyle} value={form.country} onChange={e => update("country", e.target.value)} />
@@ -147,7 +112,6 @@ function RegisterPage({ setPage, setUser }) {
           </div>
         </div>
       )}
-
       {step === 3 && (
         <div>
           <p style={{ color: "#aaa", marginBottom: "16px" }}>💳 Add your card to receive payments</p>
@@ -167,21 +131,89 @@ function RegisterPage({ setPage, setUser }) {
   );
 }
 
-function DashboardPage({ user, setPage }) {
-  const [points, setPoints] = useState(5);
-  const [activeTab, setActiveTab] = useState("feed");
+function VideoCard({ video, onWatch }) {
+  const videoRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [likes, setLikes] = useState(video.likes || 0);
 
-  const videos = [
-    { id: 1, creator: "Maria Santos", title: "How I made $500 this week on EARNO", likes: 1240, avatar: "👩" },
-    { id: 2, creator: "Jean Pierre", title: "Top 10 tips to earn more points daily", likes: 890, avatar: "👨" },
-    { id: 3, creator: "Sofia Chen", title: "My first payout experience!", likes: 2100, avatar: "👩‍💼" },
-  ];
+  const handlePlay = () => {
+    if (videoRef.current) {
+      if (playing) {
+        videoRef.current.pause();
+        setPlaying(false);
+      } else {
+        videoRef.current.play();
+        setPlaying(true);
+        onWatch();
+      }
+    }
+  };
+
+  return (
+    <div style={{ background: "#1a1a1a", borderRadius: "16px", marginBottom: "16px", border: "1px solid #222", overflow: "hidden" }}>
+      <div style={{ position: "relative", background: "#000", cursor: "pointer" }} onClick={handlePlay}>
+        <video ref={videoRef} src={video.video_url} style={{ width: "100%", maxHeight: "260px", objectFit: "cover", display: "block" }}
+          onEnded={() => setPlaying(false)} />
+        {!playing && (
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "rgba(0,0,0,0.6)", borderRadius: "50%", width: "60px", height: "60px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: "28px" }}>▶️</span>
+          </div>
+        )}
+        <div style={{ position: "absolute", bottom: "8px", right: "8px", background: "#FFD700", color: "#000", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", fontWeight: "700" }}>
+          +10 pts/min
+        </div>
+      </div>
+      <div style={{ padding: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+          <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "linear-gradient(135deg, #FFD700, #FFA500)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", color: "#000" }}>
+            {video.creator_name?.[0] || "?"}
+          </div>
+          <div>
+            <div style={{ fontWeight: "700", fontSize: "14px" }}>{video.creator_name}</div>
+            <div style={{ color: "#888", fontSize: "12px" }}>{new Date(video.created_at).toLocaleDateString()}</div>
+          </div>
+        </div>
+        <p style={{ color: "#ddd", marginBottom: "12px", fontWeight: "600" }}>{video.title}</p>
+        {video.description && <p style={{ color: "#888", fontSize: "13px", marginBottom: "12px" }}>{video.description}</p>}
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button onClick={() => setLikes(l => l + 1)}
+            style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>
+            ❤️ {likes}
+          </button>
+          <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>
+            💬 Comment
+          </button>
+          <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>
+            🎁 Gift
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardPage({ user, setPage }) {
+  const [points, setPoints] = useState(user?.points || 5);
+  const [activeTab, setActiveTab] = useState("feed");
+  const [videos, setVideos] = useState([]);
+  const [loadingVideos, setLoadingVideos] = useState(true);
 
   const jobs = [
     { company: "TechCorp", title: "Remote Customer Service", pay: "$800/mo", location: "Worldwide" },
     { company: "MediaGroup", title: "Content Creator Partner", pay: "$1200/mo", location: "Remote" },
     { company: "StartupX", title: "Social Media Manager", pay: "$600/mo", location: "Remote" },
   ];
+
+  useEffect(() => {
+    fetchVideos();
+  }, []);
+
+  const fetchVideos = async () => {
+    setLoadingVideos(true);
+    const { data, error } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
+    if (!error && data) setVideos(data);
+    setLoadingVideos(false);
+  };
 
   return (
     <div style={{ maxWidth: "480px", margin: "0 auto", paddingBottom: "80px" }}>
@@ -207,30 +239,22 @@ function DashboardPage({ user, setPage }) {
 
       {activeTab === "feed" && (
         <div style={{ padding: "16px" }}>
-          {videos.map(v => (
-            <div key={v.id} style={{ background: "#1a1a1a", borderRadius: "16px", padding: "20px", marginBottom: "16px", border: "1px solid #222" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                <div style={{ fontSize: "36px" }}>{v.avatar}</div>
-                <div>
-                  <div style={{ fontWeight: "700" }}>{v.creator}</div>
-                  <div style={{ color: "#888", fontSize: "13px" }}>+10 pts per minute watched</div>
-                </div>
-              </div>
-              <p style={{ color: "#ddd", marginBottom: "12px" }}>{v.title}</p>
-              <div style={{ background: "#111", borderRadius: "10px", height: "160px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "12px", cursor: "pointer" }}
-                onClick={() => setPoints(p => p + 10)}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "48px" }}>▶️</div>
-                  <div style={{ color: "#FFD700", fontSize: "13px", marginTop: "8px" }}>Tap to watch & earn</div>
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: "12px" }}>
-                <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer" }}>❤️ {v.likes}</button>
-                <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer" }}>💬 Comment</button>
-                <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer" }}>🎁 Gift</button>
-              </div>
+          {loadingVideos ? (
+            <p style={{ color: "#888", textAlign: "center", padding: "40px" }}>Ap chaje videyo yo...</p>
+          ) : videos.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px" }}>
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>📹</div>
+              <p style={{ color: "#888" }}>Pa gen videyo ankò.</p>
+              <button onClick={() => setPage("upload")}
+                style={{ padding: "12px 24px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer", color: "#000", marginTop: "12px" }}>
+                Poste Premye Video a!
+              </button>
             </div>
-          ))}
+          ) : (
+            videos.map(v => (
+              <VideoCard key={v.id} video={v} onWatch={() => setPoints(p => p + 10)} />
+            ))
+          )}
         </div>
       )}
 
