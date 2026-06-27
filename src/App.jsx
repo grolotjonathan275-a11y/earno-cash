@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 import Admin from "./Admin";
 import VideoUpload from "./VideoUpload";
 import Profile from "./Profile";
+import GiftSystem from "./GiftSystem";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -133,10 +134,11 @@ function RegisterPage({ setPage, setUser }) {
   );
 }
 
-function VideoCard({ video, onWatch }) {
+function VideoCard({ video, onWatch, user }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [likes, setLikes] = useState(video.likes || 0);
+  const [showGift, setShowGift] = useState(false);
 
   const handlePlay = () => {
     if (videoRef.current) {
@@ -147,6 +149,13 @@ function VideoCard({ video, onWatch }) {
 
   return (
     <div style={{ background: "#1a1a1a", borderRadius: "16px", marginBottom: "16px", border: "1px solid #222", overflow: "hidden" }}>
+      {showGift && (
+        <GiftSystem
+          user={user}
+          targetUser={{ id: video.user_id, name: video.creator_name }}
+          onClose={() => setShowGift(false)}
+        />
+      )}
       <div style={{ position: "relative", background: "#000", cursor: "pointer" }} onClick={handlePlay}>
         <video ref={videoRef} src={video.video_url} style={{ width: "100%", maxHeight: "260px", objectFit: "cover", display: "block" }} onEnded={() => setPlaying(false)} />
         {!playing && (
@@ -171,7 +180,7 @@ function VideoCard({ video, onWatch }) {
         <div style={{ display: "flex", gap: "10px" }}>
           <button onClick={() => setLikes(l => l + 1)} style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>❤️ {likes}</button>
           <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>💬 Comment</button>
-          <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>🎁 Gift</button>
+          <button onClick={() => setShowGift(true)} style={{ flex: 1, padding: "8px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "8px", color: "#000", cursor: "pointer", fontSize: "13px", fontWeight: "700" }}>🎁 Gift</button>
         </div>
       </div>
     </div>
@@ -183,6 +192,7 @@ function DashboardPage({ user, setPage }) {
   const [activeTab, setActiveTab] = useState("feed");
   const [videos, setVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(true);
+  const [showGiftBox, setShowGiftBox] = useState(false);
 
   const jobs = [
     { company: "TechCorp", title: "Remote Customer Service", pay: "$800/mo", location: "Worldwide" },
@@ -201,12 +211,26 @@ function DashboardPage({ user, setPage }) {
 
   return (
     <div style={{ maxWidth: "480px", margin: "0 auto", paddingBottom: "80px" }}>
+      {showGiftBox && (
+        <GiftSystem
+          user={user}
+          targetUser={null}
+          onClose={() => setShowGiftBox(false)}
+        />
+      )}
+
       <div style={{ background: "#111", padding: "20px", borderBottom: "1px solid #222" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ margin: 0, color: "#FFD700", fontSize: "24px" }}>EARNO</h2>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ color: "#FFD700", fontWeight: "700", fontSize: "18px" }}>⭐ {points} pts</div>
-            <div style={{ color: "#888", fontSize: "12px" }}>${(points / 100).toFixed(2)} USD</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <button onClick={() => setShowGiftBox(true)}
+              style={{ background: "#1a1a1a", border: "1px solid #333", color: "#FFD700", padding: "6px 12px", borderRadius: "8px", cursor: "pointer", fontSize: "13px" }}>
+              🎁 Kado
+            </button>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ color: "#FFD700", fontWeight: "700", fontSize: "18px" }}>⭐ {points} pts</div>
+              <div style={{ color: "#888", fontSize: "12px" }}>${(points / 100).toFixed(2)} USD</div>
+            </div>
           </div>
         </div>
         <p style={{ color: "#aaa", margin: "8px 0 0", fontSize: "14px" }}>Welcome, {user?.name || "Friend"}! 👋</p>
@@ -234,7 +258,7 @@ function DashboardPage({ user, setPage }) {
                 Poste Premye Video a!
               </button>
             </div>
-          ) : videos.map(v => <VideoCard key={v.id} video={v} onWatch={() => setPoints(p => p + 10)} />)}
+          ) : videos.map(v => <VideoCard key={v.id} video={v} user={user} onWatch={() => setPoints(p => p + 10)} />)}
         </div>
       )}
 
