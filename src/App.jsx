@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "./supabase";
 import Admin from "./Admin";
+import VideoUpload from "./VideoUpload";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -15,6 +16,7 @@ function App() {
       {page === "home" && <HomePage setPage={setPage} />}
       {page === "register" && <RegisterPage setPage={setPage} setUser={setUser} />}
       {page === "dashboard" && <DashboardPage user={user} setPage={setPage} />}
+      {page === "upload" && <VideoUpload user={user} onUploadComplete={() => setPage("dashboard")} />}
     </div>
   );
 }
@@ -268,9 +270,16 @@ function DashboardPage({ user, setPage }) {
       )}
 
       <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: "480px", background: "#111", borderTop: "1px solid #222", display: "flex" }}>
-        {["🏠 Home", "🔍 Explore", "➕ Upload", "🔔 Alerts", "👤 Profile"].map((item, i) => (
-          <button key={i} style={{ flex: 1, padding: "14px 0", background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: "11px", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
-            {item}
+        {[
+          { label: "🏠 Home", page: "home" },
+          { label: "🔍 Explore", page: "feed" },
+          { label: "➕ Upload", page: "upload" },
+          { label: "🔔 Alerts", page: "alerts" },
+          { label: "👤 Profile", page: "profile" },
+        ].map((item, i) => (
+          <button key={i} onClick={() => setPage(item.page)}
+            style={{ flex: 1, padding: "14px 0", background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: "11px", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+            {item.label}
           </button>
         ))}
       </div>
