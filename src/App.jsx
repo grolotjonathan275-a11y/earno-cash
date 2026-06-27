@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import Admin from "./Admin";
 import VideoUpload from "./VideoUpload";
+import Profile from "./Profile";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -17,6 +18,7 @@ function App() {
       {page === "register" && <RegisterPage setPage={setPage} setUser={setUser} />}
       {page === "dashboard" && <DashboardPage user={user} setPage={setPage} />}
       {page === "upload" && <VideoUpload user={user} onUploadComplete={() => setPage("dashboard")} />}
+      {page === "profile" && <Profile user={user} setPage={setPage} />}
     </div>
   );
 }
@@ -138,30 +140,21 @@ function VideoCard({ video, onWatch }) {
 
   const handlePlay = () => {
     if (videoRef.current) {
-      if (playing) {
-        videoRef.current.pause();
-        setPlaying(false);
-      } else {
-        videoRef.current.play();
-        setPlaying(true);
-        onWatch();
-      }
+      if (playing) { videoRef.current.pause(); setPlaying(false); }
+      else { videoRef.current.play(); setPlaying(true); onWatch(); }
     }
   };
 
   return (
     <div style={{ background: "#1a1a1a", borderRadius: "16px", marginBottom: "16px", border: "1px solid #222", overflow: "hidden" }}>
       <div style={{ position: "relative", background: "#000", cursor: "pointer" }} onClick={handlePlay}>
-        <video ref={videoRef} src={video.video_url} style={{ width: "100%", maxHeight: "260px", objectFit: "cover", display: "block" }}
-          onEnded={() => setPlaying(false)} />
+        <video ref={videoRef} src={video.video_url} style={{ width: "100%", maxHeight: "260px", objectFit: "cover", display: "block" }} onEnded={() => setPlaying(false)} />
         {!playing && (
           <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "rgba(0,0,0,0.6)", borderRadius: "50%", width: "60px", height: "60px", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ fontSize: "28px" }}>▶️</span>
           </div>
         )}
-        <div style={{ position: "absolute", bottom: "8px", right: "8px", background: "#FFD700", color: "#000", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", fontWeight: "700" }}>
-          +10 pts/min
-        </div>
+        <div style={{ position: "absolute", bottom: "8px", right: "8px", background: "#FFD700", color: "#000", borderRadius: "6px", padding: "4px 8px", fontSize: "12px", fontWeight: "700" }}>+10 pts/min</div>
       </div>
       <div style={{ padding: "16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
@@ -176,16 +169,9 @@ function VideoCard({ video, onWatch }) {
         <p style={{ color: "#ddd", marginBottom: "12px", fontWeight: "600" }}>{video.title}</p>
         {video.description && <p style={{ color: "#888", fontSize: "13px", marginBottom: "12px" }}>{video.description}</p>}
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={() => setLikes(l => l + 1)}
-            style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>
-            ❤️ {likes}
-          </button>
-          <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>
-            💬 Comment
-          </button>
-          <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>
-            🎁 Gift
-          </button>
+          <button onClick={() => setLikes(l => l + 1)} style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>❤️ {likes}</button>
+          <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>💬 Comment</button>
+          <button style={{ flex: 1, padding: "8px", background: "#222", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", fontSize: "13px" }}>🎁 Gift</button>
         </div>
       </div>
     </div>
@@ -204,9 +190,7 @@ function DashboardPage({ user, setPage }) {
     { company: "StartupX", title: "Social Media Manager", pay: "$600/mo", location: "Remote" },
   ];
 
-  useEffect(() => {
-    fetchVideos();
-  }, []);
+  useEffect(() => { fetchVideos(); }, []);
 
   const fetchVideos = async () => {
     setLoadingVideos(true);
@@ -250,11 +234,7 @@ function DashboardPage({ user, setPage }) {
                 Poste Premye Video a!
               </button>
             </div>
-          ) : (
-            videos.map(v => (
-              <VideoCard key={v.id} video={v} onWatch={() => setPoints(p => p + 10)} />
-            ))
-          )}
+          ) : videos.map(v => <VideoCard key={v.id} video={v} onWatch={() => setPoints(p => p + 10)} />)}
         </div>
       )}
 
@@ -268,9 +248,7 @@ function DashboardPage({ user, setPage }) {
               </div>
               <h3 style={{ margin: "0 0 8px", fontSize: "16px" }}>{j.title}</h3>
               <p style={{ color: "#888", fontSize: "13px", margin: "0 0 12px" }}>📍 {j.location}</p>
-              <button style={{ width: "100%", padding: "10px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer", color: "#000" }}>
-                Apply Now
-              </button>
+              <button style={{ width: "100%", padding: "10px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer", color: "#000" }}>Apply Now</button>
             </div>
           ))}
         </div>
@@ -283,7 +261,7 @@ function DashboardPage({ user, setPage }) {
             <div style={{ fontSize: "48px", fontWeight: "900", color: "#FFD700" }}>${(points / 100).toFixed(2)}</div>
             <div style={{ color: "#888", fontSize: "14px" }}>{points} points</div>
           </div>
-          <div style={{ background: "#1a1a1a", borderRadius: "16px", padding: "20px", marginBottom: "16px", border: "1px solid #222" }}>
+          <div style={{ background: "#1a1a1a", borderRadius: "16px", padding: "20px", border: "1px solid #222" }}>
             <h3 style={{ color: "#FFD700", margin: "0 0 16px" }}>💳 Withdraw to Card</h3>
             <p style={{ color: "#888", fontSize: "13px", margin: "0 0 16px" }}>Minimum withdrawal: $10.00 (1000 points)<br />Fee: 45% platform fee applies</p>
             <button style={{ width: "100%", padding: "14px", background: points >= 1000 ? "linear-gradient(135deg, #FFD700, #FFA500)" : "#333", border: "none", borderRadius: "10px", fontWeight: "700", cursor: points >= 1000 ? "pointer" : "not-allowed", color: points >= 1000 ? "#000" : "#666", fontSize: "16px" }}>
