@@ -1,3 +1,4 @@
+import Chatify from "./Chatify";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import Admin from "./Admin";
@@ -26,6 +27,7 @@ function App() {
       {page === "profile" && <Profile user={user} setPage={setPage} />}
       {page === "alerts" && <Notifications user={user} setPage={setPage} />}
       {page === "referral" && <Referral user={user} setPage={setPage} />}
+      {page === "chatify" && <Chatify user={user} setPage={setPage} />}
     </div>
   );
 }
@@ -327,8 +329,8 @@ function DashboardPage({ user, setPage }) {
       <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: "480px", background: "#111", borderTop: "1px solid #222", display: "flex" }}>
         {[
           { label: "🏠 Home", page: "home" },
-          { label: "🔍 Explore", page: "feed" },
-          { label: "➕ Upload", page: "upload" },
+          { label: "📱 Feed", page: "feed" },
+          { label: "💬 Chat", page: "chatify" },
           { label: "🤝 Refer", page: "referral" },
           { label: "👤 Profile", page: "profile" },
         ].map((item, i) => (
