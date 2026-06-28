@@ -28,11 +28,18 @@ function App() {
   );
 }
 
+const googleSignIn = async () => {
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: "https://earno-cash.vercel.app" }
+  });
+};
+
 function HomePage({ setPage }) {
   return (
     <div style={{ textAlign: "center", padding: "60px 20px" }}>
       <div style={{ marginBottom: "30px" }}>
-       <EarnoLogo size={160} animated={true} showText={true} showSlogan={true} />
+        <EarnoLogo size={160} animated={true} showText={true} showSlogan={true} />
       </div>
       <div style={{ display: "flex", justifyContent: "center", gap: "20px", flexWrap: "wrap", marginBottom: "50px" }}>
         {[
@@ -56,15 +63,11 @@ function HomePage({ setPage }) {
         <button onClick={() => setPage("dashboard")}
           style={{ background: "transparent", color: "#FFD700", border: "2px solid #FFD700", padding: "16px 40px", borderRadius: "50px", fontSize: "18px", fontWeight: "700", cursor: "pointer" }}>
           Sign In
-        <button onClick={async () => {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: "https://earno-cash.vercel.app" }
-  });
-}}
-style={{ background: "white", color: "#000", border: "none", padding: "16px 40px", borderRadius: "50px", fontSize: "18px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
-  <img src="https://www.google.com/favicon.ico" width="20" alt="G" /> Google
-</button>
+        </button>
+        <button onClick={googleSignIn}
+          style={{ background: "white", color: "#000", border: "none", padding: "16px 40px", borderRadius: "50px", fontSize: "18px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
+          <img src="https://www.google.com/favicon.ico" width="20" alt="G" /> Google
+        </button>
       </div>
     </div>
   );
@@ -109,6 +112,11 @@ function RegisterPage({ setPage, setUser }) {
           <button onClick={() => { if (form.name && form.email && form.password) { setError(""); setStep(2); } else setError("Please fill all fields"); }}
             style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "10px", fontSize: "16px", fontWeight: "700", cursor: "pointer", color: "#000" }}>
             Continue →
+          </button>
+          <div style={{ textAlign: "center", margin: "16px 0", color: "#888" }}>— oswa —</div>
+          <button onClick={googleSignIn}
+            style={{ width: "100%", padding: "14px", background: "white", border: "none", borderRadius: "10px", fontWeight: "700", fontSize: "16px", cursor: "pointer", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+            <img src="https://www.google.com/favicon.ico" width="20" alt="G" /> Konekte ak Google
           </button>
         </div>
       )}
@@ -217,25 +225,15 @@ function DashboardPage({ user, setPage }) {
     <div style={{ maxWidth: "480px", margin: "0 auto", paddingBottom: "80px" }}>
       {showGiftBox && <GiftSystem user={user} targetUser={null} onClose={() => setShowGiftBox(false)} />}
       {showPayment && (
-        <PaymentSystem
-          user={user}
-          onClose={() => setShowPayment(false)}
-          onSuccess={(pts) => { setPoints(p => p + pts); setShowPayment(false); }}
-        />
+        <PaymentSystem user={user} onClose={() => setShowPayment(false)} onSuccess={(pts) => { setPoints(p => p + pts); setShowPayment(false); }} />
       )}
 
       <div style={{ background: "#111", padding: "20px", borderBottom: "1px solid #222" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ margin: 0, color: "#FFD700", fontSize: "24px" }}>EARNO</h2>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button onClick={() => setShowGiftBox(true)}
-              style={{ background: "#1a1a1a", border: "1px solid #333", color: "#FFD700", padding: "6px 10px", borderRadius: "8px", cursor: "pointer", fontSize: "12px" }}>
-              🎁
-            </button>
-            <button onClick={() => setShowPayment(true)}
-              style={{ background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", color: "#000", padding: "6px 10px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}>
-              💳 Achte
-            </button>
+            <button onClick={() => setShowGiftBox(true)} style={{ background: "#1a1a1a", border: "1px solid #333", color: "#FFD700", padding: "6px 10px", borderRadius: "8px", cursor: "pointer", fontSize: "12px" }}>🎁</button>
+            <button onClick={() => setShowPayment(true)} style={{ background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", color: "#000", padding: "6px 10px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}>💳 Achte</button>
             <div style={{ textAlign: "right" }}>
               <div style={{ color: "#FFD700", fontWeight: "700", fontSize: "16px" }}>⭐ {points}</div>
               <div style={{ color: "#888", fontSize: "11px" }}>${(points / 100).toFixed(2)}</div>
@@ -262,10 +260,7 @@ function DashboardPage({ user, setPage }) {
             <div style={{ textAlign: "center", padding: "40px" }}>
               <div style={{ fontSize: "48px", marginBottom: "16px" }}>📹</div>
               <p style={{ color: "#888" }}>Pa gen videyo ankò.</p>
-              <button onClick={() => setPage("upload")}
-                style={{ padding: "12px 24px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer", color: "#000", marginTop: "12px" }}>
-                Poste Premye Video a!
-              </button>
+              <button onClick={() => setPage("upload")} style={{ padding: "12px 24px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer", color: "#000", marginTop: "12px" }}>Poste Premye Video a!</button>
             </div>
           ) : videos.map(v => <VideoCard key={v.id} video={v} user={user} onWatch={() => setPoints(p => p + 10)} />)}
         </div>
@@ -294,10 +289,7 @@ function DashboardPage({ user, setPage }) {
             <div style={{ fontSize: "48px", fontWeight: "900", color: "#FFD700" }}>${(points / 100).toFixed(2)}</div>
             <div style={{ color: "#888", fontSize: "14px" }}>{points} points</div>
           </div>
-          <button onClick={() => setShowPayment(true)}
-            style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer", color: "#000", fontSize: "16px", marginBottom: "16px" }}>
-            💳 Achte Pwen
-          </button>
+          <button onClick={() => setShowPayment(true)} style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer", color: "#000", fontSize: "16px", marginBottom: "16px" }}>💳 Achte Pwen</button>
           <div style={{ background: "#1a1a1a", borderRadius: "16px", padding: "20px", border: "1px solid #222" }}>
             <h3 style={{ color: "#FFD700", margin: "0 0 16px" }}>💸 Withdraw to Card</h3>
             <p style={{ color: "#888", fontSize: "13px", margin: "0 0 16px" }}>Minimum: $10.00 (1000 points)<br />Fee: 45% platform fee applies</p>
@@ -322,18 +314,6 @@ function DashboardPage({ user, setPage }) {
           </button>
         ))}
       </div>
-          <div style={{ textAlign: "center", margin: "16px 0", color: "#888" }}>— oswa —</div>
-          <button onClick={async () => {
-            await supabase.auth.signInWithOAuth({
-              provider: "google",
-              options: { redirectTo: "https://earno-cash.vercel.app" }
-            });
-          }}
-          style={{ width: "100%", padding: "14px", background: "white", border: "none", borderRadius: "10px", fontWeight: "700", fontSize: "16px", cursor: "pointer", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
-            <img src="https://www.google.com/favicon.ico" width="20" alt="G" /> Konekte ak Google
-          </button>
-        </div>
-      )}
     </div>
   );
 }
