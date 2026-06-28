@@ -7,6 +7,7 @@ import Profile from "./Profile";
 import GiftSystem from "./GiftSystem";
 import PaymentSystem from "./PaymentSystem";
 import Notifications from "./Notifications";
+import Referral from "./Referral";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -24,6 +25,7 @@ function App() {
       {page === "upload" && <VideoUpload user={user} onUploadComplete={() => setPage("dashboard")} />}
       {page === "profile" && <Profile user={user} setPage={setPage} />}
       {page === "alerts" && <Notifications user={user} setPage={setPage} />}
+      {page === "referral" && <Referral user={user} setPage={setPage} />}
     </div>
   );
 }
@@ -77,7 +79,7 @@ function RegisterPage({ setPage, setUser }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ name: "", email: "", password: "", country: "", address: "", cardNumber: "", cardExpiry: "", cardName: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", country: "", address: "", cardNumber: "", cardExpiry: "", cardName: "", referralCode: "" });
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
   const inputStyle = { width: "100%", padding: "14px", borderRadius: "10px", border: "1px solid #333", background: "#1a1a1a", color: "white", fontSize: "16px", marginBottom: "14px", boxSizing: "border-box" };
 
@@ -87,9 +89,30 @@ function RegisterPage({ setPage, setUser }) {
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({ email: form.email, password: form.password });
       if (authError) throw authError;
-      const { error: dbError } = await supabase.from("users").insert([{ id: authData.user.id, full_name: form.name, email: form.email, country: form.country, address: form.address, card_number: form.cardNumber, card_expiry: form.cardExpiry, card_name: form.cardName, points: 5 }]);
+
+      let referrerId = null;
+      if (form.referralCode) {
+        const { data: refData } = await supabase.from("users").select("id").eq("referral_code", form.referralCode.toUpperCase()).single();
+        if (refData) {
+          referrerId = refData.id;
+          await supabase.from("users").update({ points: supabase.rpc("increment", { x: 50 }) }).eq("id", refData.id);
+        }
+      }
+
+      const { error: dbError } = await supabase.from("users").insert([{
+        id: authData.user.id,
+        full_name: form.name,
+        email: form.email,
+        country: form.country,
+        address: form.address,
+        card_number: form.cardNumber,
+        card_expiry: form.cardExpiry,
+        card_name: form.cardName,
+        points: referrerId ? 30 : 5,
+        referred_by: referrerId,
+      }]);
       if (dbError) throw dbError;
-      setUser({ ...form, id: authData.user.id, points: 5 });
+      setUser({ ...form, id: authData.user.id, points: referrerId ? 30 : 5 });
       setPage("dashboard");
     } catch (err) { setError(err.message); }
     setLoading(false);
@@ -109,6 +132,7 @@ function RegisterPage({ setPage, setUser }) {
           <input placeholder="Full Name (as on ID)" style={inputStyle} value={form.name} onChange={e => update("name", e.target.value)} />
           <input placeholder="Email Address" type="email" style={inputStyle} value={form.email} onChange={e => update("email", e.target.value)} />
           <input placeholder="Secret Code (Password)" type="password" style={inputStyle} value={form.password} onChange={e => update("password", e.target.value)} />
+          <input placeholder="Referral Code (opsyonèl) 🎁" style={{ ...inputStyle, borderColor: "#FFD70044" }} value={form.referralCode} onChange={e => update("referralCode", e.target.value)} />
           <button onClick={() => { if (form.name && form.email && form.password) { setError(""); setStep(2); } else setError("Please fill all fields"); }}
             style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #FFD700, #FFA500)", border: "none", borderRadius: "10px", fontSize: "16px", fontWeight: "700", cursor: "pointer", color: "#000" }}>
             Continue →
@@ -305,7 +329,7 @@ function DashboardPage({ user, setPage }) {
           { label: "🏠 Home", page: "home" },
           { label: "🔍 Explore", page: "feed" },
           { label: "➕ Upload", page: "upload" },
-          { label: "🔔 Alerts", page: "alerts" },
+          { label: "🤝 Refer", page: "referral" },
           { label: "👤 Profile", page: "profile" },
         ].map((item, i) => (
           <button key={i} onClick={() => setPage(item.page)}
